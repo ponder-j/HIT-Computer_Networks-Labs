@@ -161,16 +161,16 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
 
     // 获取客户端地址信息
     getpeername(param->clientSocket, (SOCKADDR*)&clientAddr, &length);
-    printf("[新连接] 客户端: %s:%d\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
+    // printf("[新连接] 客户端: %s:%d\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
 
     // 接收客户端请求
     recvSize = recv(param->clientSocket, Buffer, MAXSIZE, 0);
     if (recvSize <= 0) {
-        printf("[错误] 接收客户端请求失败\n");
+        // printf("[错误] 接收客户端请求失败\n");
         goto error;
     }
 
-    printf("[接收] 收到 %d 字节的HTTP请求\n", recvSize);
+    // printf("[接收] 收到 %d 字节的HTTP请求\n", recvSize);
 
     // 解析HTTP头部
     httpHeader = new HttpHeader();
@@ -182,7 +182,16 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
     CacheBuffer = NULL;
 
     if (strlen(httpHeader->host) == 0) {
-        printf("[错误] 无法解析目标主机\n");
+        // printf("[错误] 无法解析目标主机\n");
+        delete httpHeader;
+        httpHeader = NULL;
+        goto error;
+    }
+
+    // ========== 检测并忽略 CONNECT 请求（HTTPS）==========
+    // 实验要求只实现 HTTP 代理，不支持 HTTPS
+    if (strcmp(httpHeader->method, "CONNECT") == 0) {
+        // 忽略 CONNECT 请求，不产生任何输出
         delete httpHeader;
         httpHeader = NULL;
         goto error;
@@ -190,35 +199,26 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
 
     printf("[解析] 方法: %s, 主机: %s\n", httpHeader->method, httpHeader->host);
 
-    // ========== 忽略 CONNECT 请求（HTTPS）==========
-    // 实验要求只实现 HTTP 代理，不支持 HTTPS
-    if (strcmp(httpHeader->method, "CONNECT") == 0) {
-        printf("[忽略] CONNECT 请求不支持（仅支持 HTTP）\n");
-        delete httpHeader;
-        httpHeader = NULL;
-        goto error;
-    }
-
     // 连接目标服务器
     if (!ConnectToServer(&param->serverSocket, httpHeader->host)) {
-        printf("[错误] 连接目标服务器 %s 失败\n", httpHeader->host);
+        // printf("[错误] 连接目标服务器 %s 失败\n", httpHeader->host);
         delete httpHeader;
         httpHeader = NULL;
         goto error;
     }
 
-    printf("[连接] 成功连接到目标服务器: %s\n", httpHeader->host);
+    // printf("[连接] 成功连接到目标服务器: %s\n", httpHeader->host);
 
     // 转发客户端请求到目标服务器
     ret = send(param->serverSocket, Buffer, recvSize, 0);
     if (ret == SOCKET_ERROR) {
-        printf("[错误] 转发请求失败\n");
+        // printf("[错误] 转发请求失败\n");
         delete httpHeader;
         httpHeader = NULL;
         goto error;
     }
 
-    printf("[转发] 已转发请求到目标服务器 (%d 字节)\n", ret);
+    // printf("[转发] 已转发请求到目标服务器 (%d 字节)\n", ret);
 
     // 循环接收目标服务器响应并转发给客户端
     totalBytes = 0;
@@ -235,12 +235,12 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
         // 转发响应到客户端
         ret = send(param->clientSocket, Buffer, recvSize, 0);
         if (ret == SOCKET_ERROR) {
-            printf("[错误] 转发响应到客户端失败\n");
+            // printf("[错误] 转发响应到客户端失败\n");
             break;
         }
     }
 
-    printf("[完成] 已转发响应到客户端 (总计 %d 字节)\n", totalBytes);
+    // printf("[完成] 已转发响应到客户端 (总计 %d 字节)\n", totalBytes);
     if (httpHeader) {
         delete httpHeader;
         httpHeader = NULL;
@@ -248,7 +248,7 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
 
 // 错误处理与资源释放
 error:
-    printf("[关闭] 关闭连接\n\n");
+    // printf("[关闭] 关闭连接\n\n");
     if (httpHeader) {
         delete httpHeader;
     }
