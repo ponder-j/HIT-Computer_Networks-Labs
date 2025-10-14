@@ -111,6 +111,7 @@ BOOL InitSocket() {
     }
 
     // 创建TCP套接字
+    // 协议族：IPv4  类型：TCP   协议：默认
     ProxyServer = socket(AF_INET, SOCK_STREAM, 0);
     if (INVALID_SOCKET == ProxyServer) {
         printf("创建套接字失败,错误代码为:%d\n", WSAGetLastError());
@@ -118,11 +119,14 @@ BOOL InitSocket() {
     }
 
     // 配置服务器地址
-    ProxyServerAddr.sin_family = AF_INET;
-    ProxyServerAddr.sin_port = htons(ProxyPort);
-    ProxyServerAddr.sin_addr.S_un.S_addr = INADDR_ANY;
+    ProxyServerAddr.sin_family = AF_INET; // 使用 IPv4 地址
+    ProxyServerAddr.sin_port = htons(ProxyPort); // 监听端口
+    ProxyServerAddr.sin_addr.S_un.S_addr = INADDR_ANY; // 监听所有可用接口
 
     // 绑定套接字
+    // (SOCKADDR*)& 将 sockaddr_in 结构体强制转换为 SOCKADDR 结构体
+    // 提取一个包含 IPv4 地址、端口、监听范围 配置信息的结构体指针
+    // 绑定到 ProxyServer 套接字上
     if (bind(ProxyServer, (SOCKADDR*)&ProxyServerAddr, sizeof(SOCKADDR)) == SOCKET_ERROR) {
         printf("绑定套接字失败\n");
         closesocket(ProxyServer);
@@ -130,6 +134,7 @@ BOOL InitSocket() {
     }
 
     // 开始监听
+    // SOMAXCONN 指定最大连接队列长度
     if (listen(ProxyServer, SOMAXCONN) == SOCKET_ERROR) {
         printf("监听端口%d失败\n", ProxyPort);
         closesocket(ProxyServer);
@@ -139,7 +144,7 @@ BOOL InitSocket() {
     return TRUE;
 }
 
-// 函数：子线程执行的代理逻辑
+// 子线程执行的代理逻辑（核心逻辑）
 unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
     char *Buffer = new char[MAXSIZE];
     ZeroMemory(Buffer, MAXSIZE);
@@ -184,6 +189,15 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
     }
 
     printf("[解析] 方法: %s, 主机: %s\n", httpHeader->method, httpHeader->host);
+
+    // ========== 忽略 CONNECT 请求（HTTPS）==========
+    // 实验要求只实现 HTTP 代理，不支持 HTTPS
+    if (strcmp(httpHeader->method, "CONNECT") == 0) {
+        printf("[忽略] CONNECT 请求不支持（仅支持 HTTP）\n");
+        delete httpHeader;
+        httpHeader = NULL;
+        goto error;
+    }
 
     // 连接目标服务器
     if (!ConnectToServer(&param->serverSocket, httpHeader->host)) {
@@ -252,7 +266,7 @@ error:
     return 0;
 }
 
-// 函数：解析HTTP头部
+// 解析HTTP头部
 void ParseHttpHead(char *buffer, HttpHeader *httpHeader) {
     char *p;
     char *ptr;
@@ -312,11 +326,12 @@ void ParseHttpHead(char *buffer, HttpHeader *httpHeader) {
 
 // 函数：连接目标服务器
 BOOL ConnectToServer(SOCKET *serverSocket, char *host) {
+    // 配置目标服务器地址和端口
     sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(HTTP_PORT);
 
-    // 通过主机名获取IP地址
+    // DNS 解析
     HOSTENT *hostent = gethostbyname(host);
     if (!hostent) {
         return FALSE;
@@ -324,7 +339,7 @@ BOOL ConnectToServer(SOCKET *serverSocket, char *host) {
     in_addr Inaddr = *((in_addr*)*hostent->h_addr_list);
     serverAddr.sin_addr.s_addr = inet_addr(inet_ntoa(Inaddr));
 
-    // 创建连接目标服务器的套接字
+    // 创建连接目标服务器的 socket
     *serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (*serverSocket == INVALID_SOCKET) {
         return FALSE;

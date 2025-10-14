@@ -1,0 +1,89 @@
+[
+    {
+        "label": "http.server",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "http.server",
+        "description": "http.server",
+        "detail": "http.server",
+        "documentation": {}
+    },
+    {
+        "label": "socketserver",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "socketserver",
+        "description": "socketserver",
+        "detail": "socketserver",
+        "documentation": {}
+    },
+    {
+        "label": "os",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "os",
+        "description": "os",
+        "detail": "os",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "formatdate",
+        "importPath": "email.utils",
+        "description": "email.utils",
+        "isExtraImport": true,
+        "detail": "email.utils",
+        "documentation": {}
+    },
+    {
+        "label": "parsedate_to_datetime",
+        "importPath": "email.utils",
+        "description": "email.utils",
+        "isExtraImport": true,
+        "detail": "email.utils",
+        "documentation": {}
+    },
+    {
+        "label": "time",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "time",
+        "description": "time",
+        "detail": "time",
+        "documentation": {}
+    },
+    {
+        "label": "CacheTestHTTPRequestHandler",
+        "kind": 6,
+        "importPath": "Lab1.test_http_server.test_cache_server",
+        "description": "Lab1.test_http_server.test_cache_server",
+        "peekOfCode": "class CacheTestHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):\n    \"\"\"支持缓存验证的 HTTP 请求处理器\"\"\"\n    def end_headers(self):\n        \"\"\"添加缓存相关的响应头\"\"\"\n        # 允许跨域（可选）\n        self.send_header('Access-Control-Allow-Origin', '*')\n        super().end_headers()\n    def do_GET(self):\n        \"\"\"处理 GET 请求，支持 If-Modified-Since 验证\"\"\"\n        # 获取请求的文件路径",
+        "detail": "Lab1.test_http_server.test_cache_server",
+        "documentation": {}
+    },
+    {
+        "label": "run_server",
+        "kind": 2,
+        "importPath": "Lab1.test_http_server.test_cache_server",
+        "description": "Lab1.test_http_server.test_cache_server",
+        "peekOfCode": "def run_server():\n    \"\"\"启动测试服务器\"\"\"\n    print(\"=\"*60)\n    print(\"HTTP 缓存测试服务器\")\n    print(\"=\"*60)\n    print(f\"监听端口: {PORT}\")\n    print(f\"工作目录: {os.getcwd()}\")\n    print(f\"启动时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\")\n    print(\"\\n功能说明:\")\n    print(\"  ✓ 支持 Last-Modified 响应头\")",
+        "detail": "Lab1.test_http_server.test_cache_server",
+        "documentation": {}
+    },
+    {
+        "label": "PORT",
+        "kind": 5,
+        "importPath": "Lab1.test_http_server.test_cache_server",
+        "description": "Lab1.test_http_server.test_cache_server",
+        "peekOfCode": "PORT = 80\nclass CacheTestHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):\n    \"\"\"支持缓存验证的 HTTP 请求处理器\"\"\"\n    def end_headers(self):\n        \"\"\"添加缓存相关的响应头\"\"\"\n        # 允许跨域（可选）\n        self.send_header('Access-Control-Allow-Origin', '*')\n        super().end_headers()\n    def do_GET(self):\n        \"\"\"处理 GET 请求，支持 If-Modified-Since 验证\"\"\"",
+        "detail": "Lab1.test_http_server.test_cache_server",
+        "documentation": {}
+    }
+]
