@@ -13,22 +13,24 @@ struct HttpHeader {
     char method[8];        // POST/GET/CONNECT
     char url[1024];        // 请求的URL
     char host[1024];       // 目标主机
+    int port;              // 目标端口
     char cookie[1024 * 10];// Cookie
     HttpHeader() {
         ZeroMemory(this, sizeof(HttpHeader));
+        port = 80;         // 默认端口为80
     }
 };
 
 // 函数声明
 BOOL InitSocket();
 void ParseHttpHead(char *buffer, HttpHeader *httpHeader);
-BOOL ConnectToServer(SOCKET *serverSocket, char *host);
+BOOL ConnectToServer(SOCKET *serverSocket, char *host, int port);
 unsigned int __stdcall ProxyThread(LPVOID lpParameter);
 
 // 代理相关参数
 SOCKET ProxyServer;                  // 代理服务器套接字
 sockaddr_in ProxyServerAddr;         // 代理服务器地址结构
-const int ProxyPort = 8080;          // 代理服务器监听端口（按实验要求使用8080）
+const int ProxyPort = 10240;          // 代理服务器监听端口（按实验要求使用10240）
 
 // 代理参数结构（传递给子线程）
 struct ProxyParam {
@@ -161,16 +163,16 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
 
     // 获取客户端地址信息
     getpeername(param->clientSocket, (SOCKADDR*)&clientAddr, &length);
-    // printf("[新连接] 客户端: %s:%d\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
+    printf("[新连接] 客户端: %s:%d\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
 
     // 接收客户端请求
     recvSize = recv(param->clientSocket, Buffer, MAXSIZE, 0);
     if (recvSize <= 0) {
-        // printf("[错误] 接收客户端请求失败\n");
+        printf("[错误] 接收客户端请求失败\n");
         goto error;
     }
 
-    // printf("[接收] 收到 %d 字节的HTTP请求\n", recvSize);
+    printf("[接收] 收到 %d 字节的HTTP请求\n", recvSize);
 
     // 解析HTTP头部
     httpHeader = new HttpHeader();
@@ -182,7 +184,7 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
     CacheBuffer = NULL;
 
     if (strlen(httpHeader->host) == 0) {
-        // printf("[错误] 无法解析目标主机\n");
+        printf("[错误] 无法解析目标主机\n");
         delete httpHeader;
         httpHeader = NULL;
         goto error;
@@ -197,28 +199,28 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
         goto error;
     }
 
-    printf("[解析] 方法: %s, 主机: %s\n", httpHeader->method, httpHeader->host);
+    printf("[解析] 方法: %s, 主机: %s, 端口: %d\n", httpHeader->method, httpHeader->host, httpHeader->port);
 
     // 连接目标服务器
-    if (!ConnectToServer(&param->serverSocket, httpHeader->host)) {
-        // printf("[错误] 连接目标服务器 %s 失败\n", httpHeader->host);
+    if (!ConnectToServer(&param->serverSocket, httpHeader->host, httpHeader->port)) {
+        printf("[错误] 连接目标服务器 %s 失败\n", httpHeader->host);
         delete httpHeader;
         httpHeader = NULL;
         goto error;
     }
 
-    // printf("[连接] 成功连接到目标服务器: %s\n", httpHeader->host);
+    printf("[连接] 成功连接到目标服务器: %s\n", httpHeader->host);
 
     // 转发客户端请求到目标服务器
     ret = send(param->serverSocket, Buffer, recvSize, 0);
     if (ret == SOCKET_ERROR) {
-        // printf("[错误] 转发请求失败\n");
+        printf("[错误] 转发请求失败\n");
         delete httpHeader;
         httpHeader = NULL;
         goto error;
     }
 
-    // printf("[转发] 已转发请求到目标服务器 (%d 字节)\n", ret);
+    printf("[转发] 已转发请求到目标服务器 (%d 字节)\n", ret);
 
     // 循环接收目标服务器响应并转发给客户端
     totalBytes = 0;
@@ -235,12 +237,12 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
         // 转发响应到客户端
         ret = send(param->clientSocket, Buffer, recvSize, 0);
         if (ret == SOCKET_ERROR) {
-            // printf("[错误] 转发响应到客户端失败\n");
+            printf("[错误] 转发响应到客户端失败\n");
             break;
         }
     }
 
-    // printf("[完成] 已转发响应到客户端 (总计 %d 字节)\n", totalBytes);
+    printf("[完成] 已转发响应到客户端 (总计 %d 字节)\n", totalBytes);
     if (httpHeader) {
         delete httpHeader;
         httpHeader = NULL;
@@ -312,7 +314,23 @@ void ParseHttpHead(char *buffer, HttpHeader *httpHeader) {
             char *host_start = p + 6; // 跳过"Host: "
             // 去除前导空格
             while (*host_start == ' ') host_start++;
-            strcpy_s(httpHeader->host, sizeof(httpHeader->host), host_start);
+
+            // 解析主机名和端口号
+            char *colon = strchr(host_start, ':');
+            if (colon != NULL) {
+                // 找到冒号，说明指定了端口
+                int host_len = colon - host_start;
+                if (host_len < 1024) {
+                    memcpy(httpHeader->host, host_start, host_len);
+                    httpHeader->host[host_len] = '\0';
+                }
+                // 解析端口号
+                httpHeader->port = atoi(colon + 1);
+            } else {
+                // 没有指定端口，使用默认端口80
+                strcpy_s(httpHeader->host, sizeof(httpHeader->host), host_start);
+                httpHeader->port = 80;
+            }
         }
         else if (strncmp(p, "Cookie:", 7) == 0) {
             // Cookie字段
@@ -325,11 +343,11 @@ void ParseHttpHead(char *buffer, HttpHeader *httpHeader) {
 }
 
 // 函数：连接目标服务器
-BOOL ConnectToServer(SOCKET *serverSocket, char *host) {
+BOOL ConnectToServer(SOCKET *serverSocket, char *host, int port) {
     // 配置目标服务器地址和端口
     sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(HTTP_PORT);
+    serverAddr.sin_port = htons(port);
 
     // DNS 解析
     HOSTENT *hostent = gethostbyname(host);
