@@ -17,7 +17,7 @@ struct HttpHeader {
     char cookie[1024 * 10];// Cookie
     HttpHeader() {
         ZeroMemory(this, sizeof(HttpHeader));
-        port = 80;         // 默认端口为80
+        port = HTTP_PORT;         // 默认端口为80
     }
 };
 
@@ -327,9 +327,9 @@ void ParseHttpHead(char *buffer, HttpHeader *httpHeader) {
                 // 解析端口号
                 httpHeader->port = atoi(colon + 1);
             } else {
-                // 没有指定端口，使用默认端口80
+                // 没有指定端口，使用默认端口
                 strcpy_s(httpHeader->host, sizeof(httpHeader->host), host_start);
-                httpHeader->port = 80;
+                httpHeader->port = HTTP_PORT;
             }
         }
         else if (strncmp(p, "Cookie:", 7) == 0) {

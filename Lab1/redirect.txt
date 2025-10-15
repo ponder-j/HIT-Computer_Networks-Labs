@@ -1,0 +1,19 @@
+# 网站引导（钓鱼）规则配置文件
+# 格式: 源网站 目标网站[:端口]
+#
+# 功能：将用户对某个网站的访问重定向到另一个网站
+# 这可以用于网站模拟、安全测试等场景
+#
+# 示例：
+# baidu.com localhost:80           # 将访问百度重定向到本地服务器
+# google.com fake-google.com       # 将访问 Google 重定向到模拟网站
+# facebook.com localhost:8080      # 将访问 Facebook 重定向到本地8080端口
+#
+# 规则说明：
+# - 必须精确匹配主机名
+# - 可以指定端口，不指定则默认80
+# - 使用 # 开头的行为注释
+
+# 示例配置（取消注释以启用）
+# baidu.com localhost
+# google.com localhost

@@ -20,7 +20,7 @@ struct HttpHeader {
     char cookie[1024 * 10];// Cookie
     HttpHeader() {
         ZeroMemory(this, sizeof(HttpHeader));
-        port = 80;         // 默认端口为80
+        port = HTTP_PORT;         // 默认端口为80
     }
 };
 
@@ -332,9 +332,22 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
             if (httpResponse->hasLastModified) {
                 printf("[响应] Last-Modified: %s\n", httpResponse->lastModified);
             }
+
+            // 如果是304响应且有缓存，直接发送缓存，不再转发服务器响应
+            if (httpResponse->statusCode == 304 && cachedData != NULL && cachedDataSize > 0) {
+                printf("[缓存] 服务器返回304，使用缓存替代响应\n");
+                ret = send(param->clientSocket, cachedData, cachedDataSize, 0);
+                if (ret == SOCKET_ERROR) {
+                    printf("[错误] 发送缓存数据失败\n");
+                } else {
+                    printf("[缓存] 成功发送缓存数据到客户端，大小: %d 字节\n", cachedDataSize);
+                }
+                // 跳出循环，不再转发服务器的304响应
+                break;
+            }
         }
 
-        // 转发响应到客户端
+        // 转发响应到客户端（非304情况）
         ret = send(param->clientSocket, Buffer, recvSize, 0);
         if (ret == SOCKET_ERROR) {
             printf("[错误] 转发响应到客户端失败\n");
@@ -347,8 +360,8 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
     // ========== 处理缓存 ==========
     if (strcmp(httpHeader->method, "GET") == 0) {
         if (httpResponse->statusCode == 304) {
-            // 304 Not Modified - 使用缓存
-            printf("[缓存] 服务器返回304 Not Modified，缓存仍然有效\n");
+            // 304已在上面处理，这里只记录日志
+            printf("[缓存] 缓存仍然有效\n");
         } else if (httpResponse->statusCode == 200 && responseBufferSize > 0) {
             // 200 OK - 保存新缓存
             if (httpResponse->hasLastModified) {

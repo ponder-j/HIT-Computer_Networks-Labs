@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>这是一个模拟页面</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            padding-top: 100px;
+            background: #ffe6e6;
+        }
+        .warning {
+            color: red;
+            font-size: 2em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="warning">⚠️ 网站引导测试成功！</div>
+    <p>你以为访问的是：<strong id="original"></strong></p>
+    <p>实际访问的是：<strong>localhost</strong></p>
+    <p>这就是钓鱼攻击的原理！</p>
+
+    <script>
+        // 显示浏览器地址栏中的主机名
+        document.getElementById('original').textContent = window.location.hostname;
+    </script>
+</body>
+</html>
