@@ -2,3 +2,5 @@
 nul
 *.exe
 */cache/*
+./Restructed_Version/build/*
+./Restructed_Version/bin/*

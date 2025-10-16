@@ -1,0 +1,27 @@
+# 网站过滤规则配置文件
+# 格式: allow/deny hostname
+# 支持子串匹配，例如 "baidu.com" 会匹配 "www.baidu.com", "tieba.baidu.com" 等
+#
+# 示例：
+# deny facebook.com      # 阻止访问 Facebook
+# deny twitter.com       # 阻止访问 Twitter
+# deny youtube.com       # 阻止访问 YouTube
+# allow github.com       # 明确允许访问 GitHub
+#
+# 规则说明：
+# - 如果没有匹配的规则，默认允许访问
+# - 规则按顺序匹配，第一个匹配的规则生效
+# - 使用 # 开头的行为注释
+
+# 示例配置（取消注释以启用）
+# deny baidu.com
+# deny qq.com
+# allow github.com
+
+# URL路径过滤示例：
+# 阻止特定页面，但允许同一网站的其他页面
+# deny localhost /filter-blocked.html
+# 等价于: deny localhost:80 /filter-blocked.html
+
+# 如果只写主机名，则阻止整个网站的所有页面
+deny 165.99.42.83:30000 /filter-blocked.html
