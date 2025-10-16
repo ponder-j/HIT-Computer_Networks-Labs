@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网站过滤测试 - 应允许访问</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .success-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .message-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+            border-radius: 5px;
+        }
+
+        .message-box h2 {
+            color: #2e7d32;
+            margin-top: 0;
+        }
+
+        .status {
+            font-size: 1.5em;
+            color: #666;
+            margin: 20px 0;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .info-box h3 {
+            color: #1976d2;
+            margin-top: 0;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .back-btn:hover {
+            opacity: 0.9;
+        }
+
+        .test-btn {
+            display: inline-block;
+            margin: 10px 5px;
+            padding: 12px 30px;
+            background: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .test-btn:hover {
+            background: #45a049;
+        }
+
+        ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">✅</div>
+        <h1>网站过滤测试通过！</h1>
+        <p class="status">测试<strong style="color: #4CAF50;">成功</strong>！</p>
+
+        <div class="message-box">
+            <h2>✅ 测试成功</h2>
+            <p>你现在能看到这个页面，说明：</p>
+            <ul>
+                <li>代理服务器<strong>正常运行</strong></li>
+                <li>网站过滤功能<strong>正确配置</strong></li>
+                <li>此网站<strong>被允许</strong>访问</li>
+                <li>HTTP请求正常转发</li>
+            </ul>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="load-time">-</div>
+                <div class="stat-label">页面加载时间 (ms)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">✓</div>
+                <div class="stat-label">访问状态</div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>🔍 代理日志应显示</h3>
+            <pre style="background: white; padding: 15px; border-radius: 5px; overflow-x: auto;">[新连接] 客户端: 127.0.0.1:xxxxx
+[接收] 收到 xxx 字节的HTTP请求
+[解析] 方法: GET, 主机: localhost:80, URL: /filter-allowed.html
+[连接] 成功连接到目标服务器: localhost:80
+[转发] 已转发请求到目标服务器 (xxx 字节)
+[响应] 状态码: 200
+[完成] 已转发响应到客户端 (总计 xxx 字节)</pre>
+        </div>
+
+        <div class="info-box" style="background: #fff3cd;">
+            <h3 style="color: #856404;">📝 配置说明</h3>
+            <p>如果要允许访问此网站，可以在 <code>website_filter.txt</code> 中添加：</p>
+            <pre style="background: white; padding: 10px; border-radius: 5px;">allow filter-allowed</pre>
+            <p style="margin-top: 10px;">或者不配置任何规则（默认允许所有）</p>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <a href="filter-blocked.html" class="test-btn">测试被阻止网站</a>
+            <a href="index.html" class="back-btn">← 返回测试中心</a>
+        </div>
+
+        <p style="margin-top: 30px; color: #999; font-size: 0.9em;">
+            <strong>当前URL：</strong><span id="current-url"></span><br>
+            <strong>访问时间：</strong><span id="access-time"></span><br>
+            <strong>浏览器：</strong><span id="user-agent"></span>
+        </p>
+    </div>
+
+    <script>
+        const startTime = performance.now();
+
+        window.addEventListener('load', function() {
+            const loadTime = Math.round(performance.now() - startTime);
+            document.getElementById('load-time').textContent = loadTime;
+        });
+
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('access-time').textContent = new Date().toLocaleString();
+        document.getElementById('user-agent').textContent = navigator.userAgent.split(' ').slice(0, 3).join(' ') + '...';
+
+        // 控制台输出
+        console.log('✅ 测试成功：网站过滤正常工作');
+        console.log('状态：允许访问');
+        console.log('页面正常加载');
+    </script>
+</body>
+</html>

@@ -13,7 +13,8 @@
 #define MAXSIZE 65507
 #define HTTP_PORT 80
 #define CACHE_DIR ".\\cache"
-#define BLOCKED_PAGE_HTML "<!DOCTYPE html><html><head><meta charset='utf-8'><title>访问被阻止</title></head><body><h1>403 Forbidden</h1><p>该网站已被管理员阻止访问。</p></body></html>"
+// 403 阻止页面
+#define BLOCKED_PAGE_HTML "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Access Blocked</title></head><body style='font-family: Arial, sans-serif; text-align: center; padding: 50px;'><h1 style='color: #d32f2f;'>403 Forbidden</h1><p style='font-size: 18px;'>This website has been blocked by the proxy administrator.</p><hr><p style='color: #666; font-size: 14px;'>Proxy Server v3.0</p></body></html>"
 
 // HTTP重要头部数据结构
 struct HttpHeader {
@@ -56,6 +57,7 @@ struct CacheItem {
 struct FilterRule {
     std::string clientIP;      // 客户端IP（用户过滤）
     std::string hostname;      // 主机名（网站过滤）
+    std::string urlPath;       // URL路径（可选，用于细粒度过滤）
     bool isAllowed;            // true=允许，false=阻止
     std::string redirectTo;    // 重定向目标（为空则不重定向）
 };
@@ -79,7 +81,7 @@ void InitCacheDirectory();
 
 // 新增：过滤和引导相关函数
 void LoadFilterRules();
-BOOL CheckWebsiteAccess(const char *hostname);
+BOOL CheckWebsiteAccess(const char *hostname, int port, const char *url);
 BOOL CheckUserAccess(const char *clientIP);
 BOOL GetRedirectTarget(const char *hostname, char *redirectHost, int *redirectPort);
 void SendBlockedResponse(SOCKET clientSocket);
@@ -192,13 +194,25 @@ void LoadFilterRules() {
             FilterRule rule;
             char action[16];
             char hostname[256];
+            char urlPath[512] = {0};
 
-            // 解析格式: allow/deny hostname
-            if (sscanf_s(line, "%s %s", action, (unsigned)sizeof(action), hostname, (unsigned)sizeof(hostname)) == 2) {
+            // 解析格式: allow/deny hostname [url_path]
+            int parsed = sscanf_s(line, "%s %s %s",
+                action, (unsigned)sizeof(action),
+                hostname, (unsigned)sizeof(hostname),
+                urlPath, (unsigned)sizeof(urlPath));
+
+            if (parsed >= 2) {
                 rule.hostname = hostname;
                 rule.isAllowed = (strcmp(action, "allow") == 0);
+                if (parsed == 3) {
+                    rule.urlPath = urlPath;
+                    printf("[配置]   %s %s%s\n", action, hostname, urlPath);
+                } else {
+                    rule.urlPath = "";
+                    printf("[配置]   %s %s\n", action, hostname);
+                }
                 websiteRules.push_back(rule);
-                printf("[配置]   %s %s\n", action, hostname);
             }
         }
         fclose(file);
@@ -254,15 +268,49 @@ void LoadFilterRules() {
     }
 }
 
-// 检查网站访问权限
-BOOL CheckWebsiteAccess(const char *hostname) {
+// 检查网站访问权限（支持URL路径过滤和端口匹配）
+BOOL CheckWebsiteAccess(const char *hostname, int port, const char *url) {
     // 如果没有规则，默认允许
     if (websiteRules.empty()) return TRUE;
 
+    // 构造完整的 host:port 字符串用于匹配
+    char fullHost[1280];
+    if (port != 80) {
+        sprintf_s(fullHost, sizeof(fullHost), "%s:%d", hostname, port);
+    } else {
+        strcpy_s(fullHost, sizeof(fullHost), hostname);
+    }
+
     // 遍历规则查找匹配
     for (size_t i = 0; i < websiteRules.size(); i++) {
-        // 支持通配符匹配（简单实现：检查子串）
-        if (strstr(hostname, websiteRules[i].hostname.c_str()) != NULL) {
+        const char *ruleHost = websiteRules[i].hostname.c_str();
+
+        // 检查主机名是否匹配（支持子串匹配）
+        // 优先匹配完整的 host:port，如果失败则尝试只匹配 hostname
+        bool hostMatched = false;
+
+        // 情况1: 规则包含端口 (如 "165.99.42.83:30000")
+        if (strchr(ruleHost, ':') != NULL) {
+            // 必须完整匹配 host:port
+            hostMatched = (strstr(fullHost, ruleHost) != NULL);
+        }
+        // 情况2: 规则只有主机名 (如 "165.99.42.83" 或 "baidu.com")
+        else {
+            // 只匹配主机名部分
+            hostMatched = (strstr(hostname, ruleHost) != NULL);
+        }
+
+        if (hostMatched) {
+            // 如果规则指定了URL路径，需要同时匹配URL
+            if (!websiteRules[i].urlPath.empty()) {
+                // 检查URL路径是否匹配
+                if (strstr(url, websiteRules[i].urlPath.c_str()) != NULL) {
+                    return websiteRules[i].isAllowed;
+                }
+                // URL不匹配，继续检查下一条规则
+                continue;
+            }
+            // 只匹配主机名，不限制URL
             return websiteRules[i].isAllowed;
         }
     }
@@ -440,8 +488,8 @@ unsigned int __stdcall ProxyThread(LPVOID lpParameter) {
            httpHeader->method, httpHeader->host, httpHeader->port, httpHeader->url);
 
     // ========== 网站过滤检查 ==========
-    if (!CheckWebsiteAccess(httpHeader->host)) {
-        printf("[网站过滤] 阻止访问网站: %s\n", httpHeader->host);
+    if (!CheckWebsiteAccess(httpHeader->host, httpHeader->port, httpHeader->url)) {
+        printf("[网站过滤] 阻止访问网站: %s:%d%s\n", httpHeader->host, httpHeader->port, httpHeader->url);
         SendBlockedResponse(param->clientSocket);
         delete httpHeader;
         httpHeader = NULL;

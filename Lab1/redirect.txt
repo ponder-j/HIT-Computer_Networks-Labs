@@ -14,6 +14,5 @@
 # - 可以指定端口，不指定则默认80
 # - 使用 # 开头的行为注释
 
-# 示例配置（取消注释以启用）
-# baidu.com localhost
+baidu.com 165.99.42.83:30000
 # google.com localhost

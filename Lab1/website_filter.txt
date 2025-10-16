@@ -17,3 +17,11 @@
 # deny baidu.com
 # deny qq.com
 # allow github.com
+
+# URL路径过滤示例：
+# 阻止特定页面，但允许同一网站的其他页面
+# deny localhost /filter-blocked.html
+# 等价于: deny localhost:80 /filter-blocked.html
+
+# 如果只写主机名，则阻止整个网站的所有页面
+deny 165.99.42.83:30000 /filter-blocked.html

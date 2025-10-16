@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网站过滤测试 - 应被阻止</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .error-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #f5576c;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .message-box {
+            background: #ffe6e6;
+            border-left: 4px solid #f44336;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+            border-radius: 5px;
+        }
+
+        .message-box h2 {
+            color: #d32f2f;
+            margin-top: 0;
+        }
+
+        .status {
+            font-size: 1.5em;
+            color: #666;
+            margin: 20px 0;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .info-box h3 {
+            color: #1976d2;
+            margin-top: 0;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .back-btn:hover {
+            opacity: 0.9;
+        }
+
+        ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-icon">❌</div>
+        <h1>如果你看到这个页面...</h1>
+        <p class="status">测试<strong style="color: #f44336;">失败</strong>！</p>
+
+        <div class="message-box">
+            <h2>⚠️ 测试失败原因</h2>
+            <p>这个页面应该被代理服务器阻止，返回 <code>403 Forbidden</code> 错误。</p>
+            <p>但是你现在能看到这个页面，说明：</p>
+            <ul>
+                <li>网站过滤功能<strong>未生效</strong></li>
+                <li>配置文件可能有误</li>
+                <li>代理服务器可能未正确启动</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <h3>🔧 如何修复</h3>
+            <p><strong>1. 检查配置文件</strong></p>
+            <p>编辑 <code>website_filter.txt</code>，添加以下规则：</p>
+            <pre style="background: white; padding: 10px; border-radius: 5px; overflow-x: auto;">deny filter-blocked</pre>
+
+            <p style="margin-top: 15px;"><strong>2. 重启代理服务器</strong></p>
+            <p>关闭 ProxyServerAdvanced.exe 并重新启动</p>
+
+            <p style="margin-top: 15px;"><strong>3. 检查启动日志</strong></p>
+            <p>确认显示：<code>[配置] deny filter-blocked</code></p>
+
+            <p style="margin-top: 15px;"><strong>4. 重新测试</strong></p>
+            <p>刷新此页面，应该显示 <strong>403 Forbidden</strong> 错误页面</p>
+        </div>
+
+        <div class="info-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+            <h3 style="color: #856404;">💡 预期行为</h3>
+            <p>当网站过滤功能正常工作时，你应该看到：</p>
+            <ul>
+                <li><strong>浏览器显示：</strong>403 Forbidden</li>
+                <li><strong>页面内容：</strong>"该网站已被管理员阻止访问"</li>
+                <li><strong>代理日志：</strong><code>[网站过滤] 阻止访问网站: filter-blocked</code></li>
+            </ul>
+        </div>
+
+        <a href="index.html" class="back-btn">← 返回测试中心</a>
+
+        <p style="margin-top: 30px; color: #999; font-size: 0.9em;">
+            <strong>当前URL：</strong><span id="current-url"></span><br>
+            <strong>访问时间：</strong><span id="access-time"></span>
+        </p>
+    </div>
+
+    <script>
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('access-time').textContent = new Date().toLocaleString();
+
+        // 控制台输出
+        console.error('⚠️ 测试失败：网站过滤未生效');
+        console.log('预期：应该被阻止，返回403错误');
+        console.log('实际：页面正常加载');
+        console.log('请检查website_filter.txt配置文件');
+    </script>
+</body>
+</html>
