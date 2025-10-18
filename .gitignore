@@ -1,5 +1,5 @@
 .claude/*
 nul
 *.exe
-*/cache/*
+*.cache
 *.o
