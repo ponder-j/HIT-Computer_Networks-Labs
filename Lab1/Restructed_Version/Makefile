@@ -3,7 +3,7 @@
 
 # 编译器设置
 CXX = g++
-CXXFLAGS = -Wall -std=c++11 -I./include
+CXXFLAGS = -Wall -std=c++11 -I./include -fexec-charset=GBK -finput-charset=UTF-8
 LDFLAGS = -lws2_32
 
 # 目录设置

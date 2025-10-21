@@ -3,3 +3,5 @@ nul
 *.exe
 *.cache
 *.o
+*.log
+.DS_Store

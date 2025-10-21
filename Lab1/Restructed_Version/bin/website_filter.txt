@@ -18,4 +18,4 @@
 # 等价于: deny localhost:80 /filter-blocked.html
 
 
-deny 165.99.42.83:30000 /filter-blocked.html
+deny 165.99.42.83:30001 /filter-blocked.html

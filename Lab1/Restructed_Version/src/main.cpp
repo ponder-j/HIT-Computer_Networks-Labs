@@ -60,9 +60,9 @@ int main()
             continue;
         }
 
-        lpProxyParam->clientSocket = acceptSocket;
-        lpProxyParam->serverSocket = INVALID_SOCKET;
-        strcpy_s(lpProxyParam->clientIP, sizeof(lpProxyParam->clientIP), inet_ntoa(clientAddr.sin_addr));
+        lpProxyParam->clientSocket = acceptSocket; // 保存客户端套接字
+        lpProxyParam->serverSocket = INVALID_SOCKET; // 初始化服务器套接字为无效
+        strcpy_s(lpProxyParam->clientIP, sizeof(lpProxyParam->clientIP), inet_ntoa(clientAddr.sin_addr)); // 保存客户端IP地址
 
         // 创建子线程处理代理请求
         hThread = (HANDLE)_beginthreadex(NULL, 0, &ProxyThread, (LPVOID)lpProxyParam, 0, 0);
