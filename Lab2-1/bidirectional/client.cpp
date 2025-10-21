@@ -24,7 +24,7 @@ struct DataFrame {
 // 全局变量
 unsigned char sendSeq = 0;
 unsigned char recvSeq = 0;
-float lossRate = 0.2f;
+float lossRate = 0.0f;
 
 // 模拟丢包
 bool simulateLoss() {
