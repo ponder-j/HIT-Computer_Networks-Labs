@@ -34,12 +34,18 @@ string getCurrentTime() {
     return timeStr;
 }
 
-// 发送数据帧并等待ACK
+/**
+ * @brief 发送数据帧并等待ACK
+ * @param sock 套接字
+ * @param clientAddr 客户端地址
+ * @param frame 数据帧
+ * @param expectedAck 期望的ACK序列号
+ */
 bool sendDataFrame(SOCKET sock, sockaddr_in& clientAddr, DataFrame& frame, int expectedAck) {
-    char buffer[sizeof(DataFrame)];
-    memcpy(buffer, &frame, sizeof(DataFrame));
+    char buffer[sizeof(DataFrame)]; // 数据帧缓冲区
+    memcpy(buffer, &frame, sizeof(DataFrame)); // 复制数据帧到缓冲区
 
-    int attempts = 0;
+    int attempts = 0; // 重传次数
     const int MAX_ATTEMPTS = 5;
 
     while (attempts < MAX_ATTEMPTS) {
@@ -60,18 +66,19 @@ bool sendDataFrame(SOCKET sock, sockaddr_in& clientAddr, DataFrame& frame, int e
         int fromLen = sizeof(fromAddr);
         AckFrame ackFrame;
 
-        fd_set readSet;
-        FD_ZERO(&readSet);
-        FD_SET(sock, &readSet);
+        fd_set readSet; // 读集合,创建一个“监视列表”
+        FD_ZERO(&readSet); // 初始化读集合
+        FD_SET(sock, &readSet); // 将套接字加入读集合
 
-        timeval timeout;
-        timeout.tv_sec = TIMEOUT_MS / 1000;
-        timeout.tv_usec = (TIMEOUT_MS % 1000) * 1000;
+        timeval timeout; // 超时结构体
+        timeout.tv_sec = TIMEOUT_MS / 1000; // 秒
+        timeout.tv_usec = (TIMEOUT_MS % 1000) * 1000; // 微秒
 
+        // select 在不阻塞程序的情况下，监视一个或多个 Socket，看它们是否准备好进行某种操作（比如读或写），并设置一个最长等待时间（超时）
         int selectResult = select(0, &readSet, NULL, NULL, &timeout);
 
         if (selectResult > 0) {
-            // 有数据可读
+            // 有数据可读，接收ACK
             int recvLen = recvfrom(sock, (char*)&ackFrame, sizeof(AckFrame), 0,
                                   (sockaddr*)&fromAddr, &fromLen);
 
@@ -149,11 +156,12 @@ int main() {
 
         if (recvLen > 0) {
             recvBuffer[recvLen] = '\0';
-            string command(recvBuffer);
+            string command(recvBuffer); // 将接收到的数据(C 字符数组)转换为字符串(C++ string)
 
-            char clientIP[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &(clientAddr.sin_addr), clientIP, INET_ADDRSTRLEN);
+            char clientIP[INET_ADDRSTRLEN]; // 存储客户端IP地址的字符串
+            inet_ntop(AF_INET, &(clientAddr.sin_addr), clientIP, INET_ADDRSTRLEN); // 将二进制 IP 地址(clientAddr.sin_addr)转换为字符串形式存入 clientIP
 
+            // ntohs 将网络字节序的端口号转换为主机字节序
             cout << "[请求] 来自 " << clientIP << ":" << ntohs(clientAddr.sin_port)
                  << " - " << command << endl;
 

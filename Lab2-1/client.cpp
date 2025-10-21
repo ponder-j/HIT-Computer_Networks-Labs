@@ -87,9 +87,10 @@ int main() {
                   (sockaddr*)&serverAddr, sizeof(serverAddr));
 
             char recvBuffer[BUFFER_SIZE];
-            sockaddr_in fromAddr;
-            int fromLen = sizeof(fromAddr);
+            sockaddr_in fromAddr; // 服务器地址
+            int fromLen = sizeof(fromAddr); // 地址长度
 
+            // 消息接收，recvBuffer存放接收到的数据, fromAddr存放发送方地址，fromLen存放地址长度, 返回接收数据的长度
             int recvLen = recvfrom(clientSocket, recvBuffer, BUFFER_SIZE, 0,
                                   (sockaddr*)&fromAddr, &fromLen);
 
@@ -143,8 +144,8 @@ int main() {
                   (sockaddr*)&serverAddr, sizeof(serverAddr));
 
             // 接收数据
-            unsigned char expectedSeq = 0;
-            int receivedCount = 0;
+            unsigned char expectedSeq = 0; // 期望的序列号
+            int receivedCount = 0; // 已接收数据包计数
 
             while (true) {
                 DataFrame frame;
@@ -154,7 +155,7 @@ int main() {
                 // 设置接收超时
                 DWORD timeout = 10000; // 10秒
                 setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,
-                          (char*)&timeout, sizeof(timeout));
+                          (char*)&timeout, sizeof(timeout)); // SO_RCVTIMEO 设置接收超时
 
                 int recvLen = recvfrom(clientSocket, (char*)&frame, sizeof(DataFrame), 0,
                                       (sockaddr*)&fromAddr, &fromLen);
