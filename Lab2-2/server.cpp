@@ -13,9 +13,10 @@ using namespace std;
 // 服务器配置
 #define SERVER_PORT 12340
 #define BUFFER_LENGTH 1026
-#define SEND_WIND_SIZE 10    // 发送窗口大小
-#define SEQ_SIZE 20          // 序列号个数(0-19)
+#define SEND_WIND_SIZE 15    // 发送窗口大小(最大为2^n-1=15)
+#define SEQ_SIZE 16          // 序列号个数(n=4, 2^4=16, 序列号范围0-15)
 #define TIMEOUT_THRESHOLD 50 // 超时阈值
+#define MAX_RETRIES 10       // 最大重传次数
 
 // 数据帧结构
 struct DataFrame {
@@ -27,14 +28,14 @@ struct DataFrame {
 // ACK帧结构
 struct AckFrame {
     unsigned char ack;       // ACK序列号
-    unsigned char flag;      // 标志位
+    unsigned char flag;      // 预留标志位
 };
 
 // 全局变量
 BOOL ack[SEQ_SIZE];         // 收到ACK情况
 int curSeq;                 // 当前数据包的seq
 int curAck;                 // 当前等待确认的ack
-int totalSeq;               // 总的数据包数
+int totalSeq;               // 总的已发送数据包数
 int totalPacket;            // 需要发送的包总数
 vector<DataFrame> packets;  // 数据包缓冲区
 
@@ -47,7 +48,7 @@ void getCurTime(char* ptime) {
 
 // 判断当前序列号是否可用
 bool seqIsAvailable() {
-    int step = (curSeq + SEQ_SIZE - curAck) % SEQ_SIZE;
+    int step = (curSeq + SEQ_SIZE - curAck) % SEQ_SIZE; // 计算窗口内已发送但未确认的包数
     return step < SEND_WIND_SIZE;
 }
 
@@ -88,34 +89,29 @@ void timeoutHandler(SOCKET sockServer, sockaddr_in& clientAddr) {
 void ackHandler(unsigned char c) {
     cout << "[ACK处理] 收到ACK=" << (int)c << endl;
 
-    if (c >= curAck) {
-        // 正常情况:累积确认
-        for (int i = curAck; i <= c; i++) {
+    // 计算ACK序列号与curAck的关系（考虑循环）
+    int ackDist = (c + SEQ_SIZE - curAck) % SEQ_SIZE;
+    int windowSize = (curSeq + SEQ_SIZE - curAck) % SEQ_SIZE;
+
+    // 判断ACK是否在有效范围内（窗口内的已发送包）
+    if (ackDist < windowSize) {
+        // 有效ACK，累积确认到c
+        int i = curAck;
+        while (i != (c + 1) % SEQ_SIZE) {
             ack[i] = TRUE;
+            i = (i + 1) % SEQ_SIZE;
         }
 
-        // 移动窗口
+        // 移动窗口：滑动到第一个未确认的位置
         while (ack[curAck] && curAck != curSeq) {
             ack[curAck] = FALSE;
             curAck = (curAck + 1) % SEQ_SIZE;
         }
 
         cout << "[窗口滑动] 新的curAck=" << curAck << endl;
-    } else if (c < curAck) {
-        // 处理序列号回绕的情况
-        if (c + SEQ_SIZE >= curAck) {
-            for (int i = curAck; i < SEQ_SIZE; i++) {
-                ack[i] = TRUE;
-            }
-            for (int i = 0; i <= c; i++) {
-                ack[i] = TRUE;
-            }
-
-            while (ack[curAck] && curAck != curSeq) {
-                ack[curAck] = FALSE;
-                curAck = (curAck + 1) % SEQ_SIZE;
-            }
-        }
+    } else {
+        // 重复ACK或过期ACK，忽略
+        cout << "[忽略] 重复或无效的ACK" << endl;
     }
 
     printWindow();
@@ -140,7 +136,7 @@ int main() {
 
     // 设置非阻塞模式
     u_long iMode = 1;
-    ioctlsocket(sockServer, FIONBIO, &iMode);
+    ioctlsocket(sockServer, FIONBIO, &iMode); // File I/O Non-Blocking I/O
 
     // 绑定地址
     sockaddr_in addrServer;
@@ -231,10 +227,10 @@ int main() {
                 // 准备所有数据包
                 for (int i = 0; i < totalPacket; i++) {
                     DataFrame frame;
-                    frame.seq = i % SEQ_SIZE;
+                    frame.seq = i % SEQ_SIZE; // 配置序列号
                     strcpy(frame.data, testData[i]);
                     frame.flag = (i == totalPacket - 1) ? 1 : 0;
-                    packets.push_back(frame);
+                    packets.push_back(frame); // 存入缓冲区
                 }
 
                 cout << "准备发送 " << totalPacket << " 个数据包" << endl;
@@ -242,10 +238,12 @@ int main() {
 
                 // GBN发送循环
                 int timer = 0;
+                int retryCount = 0;  // 连续超时重传计数
                 bool transferComplete = false;
 
                 while (!transferComplete) {
                     // 在窗口允许的范围内发送数据
+                    // curSeq < totalPacket 防止在 totalPacket 较小时访问越界
                     while (seqIsAvailable() && curSeq < totalPacket) {
                         sendto(sockServer, (char*)&packets[curSeq], sizeof(DataFrame), 0,
                               (sockaddr*)&addrClient, addrClientLen);
@@ -253,9 +251,11 @@ int main() {
                         cout << "[发送] Seq=" << curSeq
                              << ", 数据=\"" << packets[curSeq].data << "\"" << endl;
 
-                        curSeq = (curSeq + 1) % SEQ_SIZE;
-                        totalSeq++;
-                        timer = 0; // 重置计时器
+                        curSeq = (curSeq + 1) % SEQ_SIZE; // curSeq 更新为下一个待发送的序列号
+                        totalSeq++; // 统计已发送的数据包数
+                        
+                        // 不要在发送时重置计时器
+                        // 计时器只在收到ACK或超时重传后重置
                     }
 
                     // 尝试接收ACK
@@ -270,6 +270,7 @@ int main() {
                         // 收到ACK,处理并重置计时器
                         ackHandler(ackFrame.ack);
                         timer = 0;
+                        retryCount = 0;  // 收到ACK，重置重传计数
 
                         // 检查是否所有数据都已确认
                         if (curAck == totalPacket % SEQ_SIZE && totalSeq == totalPacket) {
@@ -280,9 +281,28 @@ int main() {
                         timer++;
 
                         if (timer >= TIMEOUT_THRESHOLD) {
-                            // 超时,重传
-                            timeoutHandler(sockServer, addrClient);
-                            timer = 0;
+                            retryCount++;
+                            cout << "[超时] 第 " << retryCount << " 次重传" << endl;
+                            
+                            // 检查是否超过最大重传次数
+                            if (retryCount >= MAX_RETRIES) {
+                                cout << "\n[警告] 达到最大重传次数，可能传输已完成但ACK丢失" << endl;
+                                cout << "[判断] 已发送所有数据包 (totalSeq=" << totalSeq 
+                                     << ", totalPacket=" << totalPacket << ")" << endl;
+                                
+                                // 如果所有包都已发送，假设传输完成
+                                if (totalSeq >= totalPacket) {
+                                    cout << "[假定] 传输可能已成功完成" << endl;
+                                    transferComplete = true;
+                                } else {
+                                    cout << "[失败] 传输失败" << endl;
+                                    transferComplete = true;
+                                }
+                            } else {
+                                // 超时,重传
+                                timeoutHandler(sockServer, addrClient);
+                                timer = 0;
+                            }
                         }
 
                         Sleep(1); // 短暂休眠
@@ -302,7 +322,7 @@ int main() {
             }
         }
 
-        Sleep(1); // 短暂休眠,避免CPU占用过高
+        Sleep(1);
     }
 
     // 清理

@@ -13,7 +13,7 @@ using namespace std;
 #define SERVER_PORT 12340
 #define SERVER_IP "127.0.0.1"
 #define BUFFER_LENGTH 1026
-#define SEQ_SIZE 20
+#define SEQ_SIZE 16          // 序列号个数(n=4, 2^4=16, 序列号范围0-15)
 
 // 数据帧结构
 struct DataFrame {
