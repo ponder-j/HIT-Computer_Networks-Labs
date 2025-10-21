@@ -25,6 +25,16 @@ struct AckFrame {
     unsigned char ack;      // ACK序列号
 };
 
+// 全局变量
+float ackLossRate = 0.0f; // ACK丢包率
+
+// 模拟ACK丢包
+bool simulateAckLoss() {
+    if (ackLossRate <= 0.0f) return false;
+    float random = (float)rand() / RAND_MAX;
+    return random < ackLossRate;
+}
+
 // 获取当前时间字符串
 string getCurrentTime() {
     time_t now = time(0);
@@ -40,8 +50,9 @@ string getCurrentTime() {
  * @param clientAddr 客户端地址
  * @param frame 数据帧
  * @param expectedAck 期望的ACK序列号
+ * @param isLastFrame 是否是最后一个数据帧
  */
-bool sendDataFrame(SOCKET sock, sockaddr_in& clientAddr, DataFrame& frame, int expectedAck) {
+bool sendDataFrame(SOCKET sock, sockaddr_in& clientAddr, DataFrame& frame, int expectedAck, bool isLastFrame = false) {
     char buffer[sizeof(DataFrame)]; // 数据帧缓冲区
     memcpy(buffer, &frame, sizeof(DataFrame)); // 复制数据帧到缓冲区
 
@@ -85,6 +96,14 @@ bool sendDataFrame(SOCKET sock, sockaddr_in& clientAddr, DataFrame& frame, int e
             if (recvLen > 0) {
                 cout << "[接收] ACK=" << (int)ackFrame.ack << endl;
 
+                // 模拟ACK丢失(服务器收到ACK但假装没收到)
+                // 注意: 最后一个数据包不模拟ACK丢失，因为客户端已经结束接收
+                if (!isLastFrame && simulateAckLoss()) {
+                    cout << "[模拟] ACK丢失! 假装未收到ACK" << endl;
+                    attempts++; // 计入重传次数
+                    continue; // 继续等待下一个ACK或超时重传
+                }
+
                 if (ackFrame.ack == expectedAck) {
                     cout << "[成功] 收到正确ACK" << endl;
                     return true;
@@ -108,6 +127,8 @@ bool sendDataFrame(SOCKET sock, sockaddr_in& clientAddr, DataFrame& frame, int e
 }
 
 int main() {
+    srand((unsigned int)time(NULL)); // 初始化随机数种子
+
     // 初始化Winsock
     WSADATA wsaData;
     int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -140,6 +161,27 @@ int main() {
     cout << "======================================" << endl;
     cout << "停等协议服务器已启动" << endl;
     cout << "监听端口: " << SERVER_PORT << endl;
+    cout << "======================================" << endl;
+
+    // 设置ACK丢包率
+    cout << "\n请输入ACK丢包率 (0.0-1.0, 默认0.2): ";
+    string input;
+    getline(cin, input);
+
+    if (!input.empty()) {
+        try {
+            ackLossRate = stof(input);
+            if (ackLossRate < 0.0f) ackLossRate = 0.0f;
+            if (ackLossRate > 1.0f) ackLossRate = 1.0f;
+        } catch (...) {
+            cout << "[警告] 无效的丢包率, 使用默认值0.2" << endl;
+            ackLossRate = 0.2f;
+        }
+    } else {
+        ackLossRate = 0.2f;
+    }
+
+    cout << "\n[配置] ACK模拟丢包率: " << (ackLossRate * 100) << "%" << endl;
     cout << "======================================" << endl;
 
     // 主循环
@@ -204,10 +246,11 @@ int main() {
                     frame.seq = currentSeq;
                     strcpy_s(frame.data, testData[i]);
                     frame.flag = (i == dataCount - 1) ? 1 : 0; // 最后一帧标记为结束
+                    bool isLastFrame = (i == dataCount - 1); // 是否是最后一帧
 
                     cout << "\n--- 发送数据包 " << (i + 1) << "/" << dataCount << " ---" << endl;
 
-                    if (!sendDataFrame(serverSocket, clientAddr, frame, currentSeq)) {
+                    if (!sendDataFrame(serverSocket, clientAddr, frame, currentSeq, isLastFrame)) {
                         cout << "[失败] 数据包发送失败" << endl;
                         success = false;
                         break;

@@ -27,13 +27,21 @@ struct AckFrame {
 };
 
 // 全局变量
-float lossRate = 0.0f; // 丢包率
+float lossRate = 0.0f; // 数据包丢包率
+float ackLossRate = 0.0f; // ACK丢包率
 
-// 模拟丢包
+// 模拟数据包丢包
 bool simulateLoss() {
     if (lossRate <= 0.0f) return false;
     float random = (float)rand() / RAND_MAX;
     return random < lossRate;
+}
+
+// 模拟ACK丢包
+bool simulateAckLoss() {
+    if (ackLossRate <= 0.0f) return false;
+    float random = (float)rand() / RAND_MAX;
+    return random < ackLossRate;
 }
 
 int main() {
@@ -66,10 +74,12 @@ int main() {
     cout << "服务器地址: " << SERVER_IP << ":" << SERVER_PORT << endl;
     cout << "======================================" << endl;
     cout << "\n可用命令:" << endl;
-    cout << "  -time         获取服务器时间" << endl;
-    cout << "  -test [丢包率] 测试停等协议 (丢包率0.0-1.0,默认0.2)" << endl;
-    cout << "  -quit         退出程序" << endl;
-    cout << "  其他文本      回显测试" << endl;
+    cout << "  -time                          获取服务器时间" << endl;
+    cout << "  -test [数据丢包率] [ACK丢包率]  测试停等协议" << endl;
+    cout << "                                 丢包率范围0.0-1.0" << endl;
+    cout << "                                 默认: 数据丢包率=0.2, ACK丢包率=0.1" << endl;
+    cout << "  -quit                          退出程序" << endl;
+    cout << "  其他文本                        回显测试" << endl;
     cout << "======================================\n" << endl;
 
     // 主循环
@@ -120,22 +130,44 @@ int main() {
         }
         else if (input.substr(0, 5) == "-test") {
             // 测试停等协议
-            lossRate = 0.2f; // 默认丢包率
+            lossRate = 0.2f; // 默认数据丢包率
+            ackLossRate = 0.1f; // 默认ACK丢包率
 
-            // 解析丢包率参数
+            // 解析参数
             if (input.length() > 6) {
+                size_t firstSpace = input.find(' ', 6);
+                size_t secondSpace = input.find(' ', firstSpace + 1);
+
+                // 解析第一个参数(数据丢包率)
                 try {
-                    lossRate = stof(input.substr(6));
+                    string firstParam = (secondSpace != string::npos)
+                        ? input.substr(6, secondSpace - 6)
+                        : input.substr(6);
+                    lossRate = stof(firstParam);
                     if (lossRate < 0.0f) lossRate = 0.0f;
                     if (lossRate > 1.0f) lossRate = 1.0f;
                 } catch (...) {
-                    cout << "[警告] 无效的丢包率, 使用默认值0.2" << endl;
+                    cout << "[警告] 无效的数据丢包率, 使用默认值0.2" << endl;
                     lossRate = 0.2f;
+                }
+
+                // 解析第二个参数(ACK丢包率)
+                if (secondSpace != string::npos && secondSpace + 1 < input.length()) {
+                    try {
+                        string secondParam = input.substr(secondSpace + 1);
+                        ackLossRate = stof(secondParam);
+                        if (ackLossRate < 0.0f) ackLossRate = 0.0f;
+                        if (ackLossRate > 1.0f) ackLossRate = 1.0f;
+                    } catch (...) {
+                        cout << "[警告] 无效的ACK丢包率, 使用默认值0.1" << endl;
+                        ackLossRate = 0.1f;
+                    }
                 }
             }
 
             cout << "\n[开始] 停等协议测试" << endl;
-            cout << "模拟丢包率: " << (lossRate * 100) << "%" << endl;
+            cout << "数据包丢包率: " << (lossRate * 100) << "%" << endl;
+            cout << "ACK丢包率: " << (ackLossRate * 100) << "%" << endl;
             cout << "======================================" << endl;
 
             // 发送测试命令
@@ -146,6 +178,7 @@ int main() {
             // 接收数据
             unsigned char expectedSeq = 0; // 期望的序列号
             int receivedCount = 0; // 已接收数据包计数
+            int duplicateCount = 0; // 重复数据包计数
 
             while (true) {
                 DataFrame frame;
@@ -172,13 +205,20 @@ int main() {
 
                     // 检查序列号
                     if (frame.seq == expectedSeq) {
-                        cout << "[正确] 序列号匹配, 发送ACK=" << (int)expectedSeq << endl;
+                        cout << "[正确] 序列号匹配, 准备发送ACK=" << (int)expectedSeq << endl;
+
+                        // 模拟ACK丢失
+                        if (simulateAckLoss()) {
+                            cout << "[模拟] ACK丢失! 不发送ACK" << endl;
+                            continue;
+                        }
 
                         // 发送ACK
                         AckFrame ackFrame;
                         ackFrame.ack = expectedSeq;
                         sendto(clientSocket, (char*)&ackFrame, sizeof(AckFrame), 0,
                               (sockaddr*)&serverAddr, sizeof(serverAddr));
+                        cout << "[发送] ACK=" << (int)expectedSeq << endl;
 
                         receivedCount++;
 
@@ -188,12 +228,26 @@ int main() {
                         // 检查是否为最后一帧
                         if (frame.flag == 1) {
                             cout << "\n[完成] 收到结束标志, 传输完成!" << endl;
-                            cout << "总共接收: " << receivedCount << " 个数据包" << endl;
+                            cout << "======================================" << endl;
+                            cout << "统计信息:" << endl;
+                            cout << "  成功接收数据包: " << receivedCount << " 个" << endl;
+                            cout << "  重复数据包: " << duplicateCount << " 个" << endl;
+                            cout << "======================================" << endl;
                             break;
                         }
                     } else {
-                        cout << "[错误] 序列号不匹配! 期望=" << (int)expectedSeq
+                        cout << "[重复] 序列号不匹配! 期望=" << (int)expectedSeq
                              << ", 实际=" << (int)frame.seq << endl;
+                        cout << "[重复] 这是重复的数据包, 丢弃数据" << endl;
+
+                        duplicateCount++;
+
+                        // 模拟ACK丢失
+                        if (simulateAckLoss()) {
+                            cout << "[模拟] ACK丢失! 不重发ACK" << endl;
+                            continue;
+                        }
+
                         cout << "[重发] 重发上一个ACK=" << (int)(1 - expectedSeq) << endl;
 
                         // 重发上一个ACK
@@ -206,6 +260,11 @@ int main() {
                     int error = WSAGetLastError();
                     if (error == WSAETIMEDOUT) {
                         cout << "\n[超时] 未收到更多数据, 测试结束" << endl;
+                        cout << "======================================" << endl;
+                        cout << "统计信息:" << endl;
+                        cout << "  成功接收数据包: " << receivedCount << " 个" << endl;
+                        cout << "  重复数据包: " << duplicateCount << " 个" << endl;
+                        cout << "======================================" << endl;
                         break;
                     } else {
                         cout << "[错误] 接收失败: " << error << endl;

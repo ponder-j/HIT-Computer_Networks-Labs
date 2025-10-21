@@ -31,7 +31,7 @@ flowchart TD
     GBNLoop -->|否| CheckWindow{窗口允许发送?<br/>seqIsAvailable}
     GBNLoop -->|是| TestComplete[GBN测试完成]
 
-    CheckWindow -->|是| SendPacket[发送数据包<br/>packets[curSeq]]
+    CheckWindow -->|是| SendPacket[发送数据包<br/>packets数组元素]
     CheckWindow -->|否| TryRecvACK[尝试接收ACK]
 
     SendPacket --> IncSeq[curSeq++<br/>totalSeq++]
