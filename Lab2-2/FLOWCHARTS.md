@@ -8,61 +8,45 @@
 flowchart TD
     Start([服务器启动]) --> Init[初始化Winsock]
     Init --> CreateSocket[创建UDP Socket]
-    CreateSocket --> SetNonBlock[设置非阻塞模式<br/>ioctlsocket]
+    CreateSocket --> SetNonBlock["设置非阻塞模式<br/>ioctlsocket"]
     SetNonBlock --> Bind[绑定端口12340]
     Bind --> WaitCmd[等待客户端命令]
-
     WaitCmd --> RecvCmd{接收到命令?}
     RecvCmd -->|无数据| Sleep1[Sleep 1ms]
     Sleep1 --> WaitCmd
     RecvCmd -->|-time| SendTime[发送服务器时间]
     RecvCmd -->|-quit| SendBye[发送Goodbye]
     RecvCmd -->|-testgbn| StartGBN[开始GBN协议测试]
-
     SendTime --> WaitCmd
     SendBye --> WaitCmd
-
-    StartGBN --> InitGBN[初始化GBN参数<br/>curSeq=0, curAck=0<br/>清空ack数组]
-    InitGBN --> PreparePackets[准备数据包<br/>15个测试数据]
-    PreparePackets --> StoreBuffer[存入发送缓冲区<br/>packets数组]
-
+    StartGBN --> InitGBN["初始化GBN参数<br/>curSeq=0, curAck=0<br/>清空ack数组"]
+    InitGBN --> PreparePackets["准备数据包<br/>15个测试数据"]
+    PreparePackets --> StoreBuffer["存入发送缓冲区<br/>packets数组"]
     StoreBuffer --> GBNLoop{传输完成?}
-
-    GBNLoop -->|否| CheckWindow{窗口允许发送?<br/>seqIsAvailable}
+    GBNLoop -->|否| CheckWindow{"窗口允许发送?<br/>seqIsAvailable"}
     GBNLoop -->|是| TestComplete[GBN测试完成]
-
-    CheckWindow -->|是| SendPacket[发送数据包<br/>packets数组元素]
+    CheckWindow -->|是| SendPacket["发送数据包<br/>packets数组元素"]
     CheckWindow -->|否| TryRecvACK[尝试接收ACK]
-
-    SendPacket --> IncSeq[curSeq++<br/>totalSeq++]
-    IncSeq --> ResetTimer[重置计时器<br/>timer=0]
+    SendPacket --> IncSeq["curSeq++<br/>totalSeq++"]
+    IncSeq --> ResetTimer["重置计时器<br/>timer=0"]
     ResetTimer --> TryRecvACK
-
     TryRecvACK --> RecvResult{收到ACK?}
-
-    RecvResult -->|是| HandleACK[处理ACK<br/>ackHandler]
+    RecvResult -->|是| HandleACK["处理ACK<br/>ackHandler"]
     RecvResult -->|否| IncTimer[timer++]
-
-    HandleACK --> UpdateAck[标记已确认<br/>ack[i]=TRUE]
-    UpdateAck --> SlideWindow[滑动窗口<br/>while ack[curAck]]
-    SlideWindow --> ResetTimer2[重置计时器<br/>timer=0]
+    HandleACK --> UpdateAck["标记已确认<br/>ack[i]=TRUE"]
+    UpdateAck --> SlideWindow["滑动窗口<br/>while ack[curAck]"]
+    SlideWindow --> ResetTimer2["重置计时器<br/>timer=0"]
     ResetTimer2 --> CheckComplete{全部确认?}
-
-    IncTimer --> CheckTimeout{超时?<br/>timer>=threshold}
+    IncTimer --> CheckTimeout{"超时?<br/>timer>=threshold"}
     CheckTimeout -->|否| Sleep2[Sleep 1ms]
     CheckTimeout -->|是| Timeout[超时处理]
-
     Sleep2 --> GBNLoop
-
-    Timeout --> GoBackN[回退重传<br/>重传curAck到curSeq<br/>所有未确认的包]
-    GoBackN --> ResetTimer3[重置计时器<br/>timer=0]
+    Timeout --> GoBackN["回退重传<br/>重传curAck到curSeq<br/>所有未确认的包"]
+    GoBackN --> ResetTimer3["重置计时器<br/>timer=0"]
     ResetTimer3 --> GBNLoop
-
     CheckComplete -->|是| GBNLoop
     CheckComplete -->|否| GBNLoop
-
     TestComplete --> WaitCmd
-
     style Start fill:#90EE90
     style TestComplete fill:#90EE90
     style SendPacket fill:#87CEEB
@@ -344,45 +328,42 @@ stateDiagram-v2
 
 ```mermaid
 graph TD
-    subgraph 发送窗口[发送窗口 大小=10]
+    subgraph 发送窗口["发送窗口 大小=10"]
         direction LR
-        A0[curAck=0]
-        A1[1]
-        A2[2]
-        A3[3]
-        A4[4]
-        A5[5]
-        A6[6]
-        A7[7]
-        A8[8]
-        A9[9]
-        A10[curSeq=10]
+        A0["curAck=0"]
+        A1["1"]
+        A2["2"]
+        A3["3"]
+        A4["4"]
+        A5["5"]
+        A6["6"]
+        A7["7"]
+        A8["8"]
+        A9["9"]
+        A10["curSeq=10"]
     end
-
-    subgraph 序列号空间[序列号空间 0-19]
+    subgraph 序列号空间["序列号空间 0-19"]
         direction LR
-        S0[0]
-        S1[1]
-        S2[2]
-        S3[3]
-        S4[...]
-        S19[19]
+        S0["0"]
+        S1["1"]
+        S2["2"]
+        S3["3"]
+        S4["..."]
+        S19["19"]
     end
-
-    subgraph ACK状态[ACK确认状态]
+    subgraph ACK状态["ACK确认状态"]
         direction LR
-        ACK0[√ ACK0]
-        ACK1[√ ACK1]
-        ACK2[√ ACK2]
-        ACK3[× ACK3]
-        ACK4[× ACK4]
-        ACK5[× ACK5]
-        ACK6[× ACK6]
-        ACK7[× ACK7]
-        ACK8[× ACK8]
-        ACK9[× ACK9]
+        ACK0["√ ACK0"]
+        ACK1["√ ACK1"]
+        ACK2["√ ACK2"]
+        ACK3["× ACK3"]
+        ACK4["× ACK4"]
+        ACK5["× ACK5"]
+        ACK6["× ACK6"]
+        ACK7["× ACK7"]
+        ACK8["× ACK8"]
+        ACK9["× ACK9"]
     end
-
     style A0 fill:#90EE90
     style A10 fill:#FFB6C1
     style ACK0 fill:#90EE90
@@ -508,6 +489,8 @@ sequenceDiagram
 
 ## 9. 数据结构关系图
 
+![image-20251021142935422](C:\Users\A2140\AppData\Roaming\Typora\typora-user-images\image-20251021142935422.png)
+
 ```mermaid
 classDiagram
     class DataFrame {
@@ -518,13 +501,11 @@ classDiagram
         +getData() char*
         +isLastFrame() bool
     }
-
     class AckFrame {
         +unsigned char ack
         +unsigned char flag
         +getAck() unsigned char
     }
-
     class GBN {
         -BOOL ack[SEQ_SIZE]
         -int curSeq
@@ -539,16 +520,12 @@ classDiagram
         +ackHandler(ack) void
         +printWindow() void
     }
-
+    
     DataFrame --> GBN : 存储在packets
     AckFrame --> GBN : 确认机制
     GBN --> DataFrame : 发送
+    
 
-    note for DataFrame "数据帧\nseq: 0-19\ndata: ≤1024字节\nflag: 0=数据 1=结束"
-
-    note for AckFrame "确认帧\nack: 累积确认序列号\nflag: 2=ACK标志"
-
-    note for GBN "GBN协议核心\n发送窗口: 10\n接收窗口: 1\n回退重传机制"
 ```
 
 ## 10. 时序关系图 (含超时重传)
