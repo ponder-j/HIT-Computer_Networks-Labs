@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Lab2-1/bidirectional/README.md",
+                "file": "Lab2-2/实验报告.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "README"
+              "title": "实验报告"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Lab2-1/bidirectional/README.md",
+                "file": "Lab2-2/实验报告.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for README"
+              "title": "Backlinks for 实验报告"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Lab2-1/bidirectional/README.md",
+                "file": "Lab2-2/实验报告.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from README"
+              "title": "Outgoing links from 实验报告"
             }
           },
           {
@@ -142,13 +142,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Lab2-1/bidirectional/README.md",
+                "file": "Lab2-2/实验报告.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of README"
+              "title": "Outline of 实验报告"
             }
           }
         ]
@@ -171,6 +171,13 @@
   },
   "active": "3569ac67af71c4ff",
   "lastOpenFiles": [
+    "《计算机网络》实验指导书(2023).pdf",
+    "实验四FAQ.pdf",
+    "LAB2_COMPLETE_REPORT.md",
+    "README.md",
+    "README_Lab2.md",
+    "Lab2-1/bidirectional/README.md",
+    "Lab2-2/实验报告.md",
     "Lab2-1/SR协议.docx",
     "Lab2-1/~$文件传输.docx",
     "Lab2-1/~$双向停等协议.docx",
@@ -179,9 +186,6 @@
     "Lab2-1/实验报告.md",
     "Lab2-1/README.md",
     "Lab2-1/FLOWCHARTS.md",
-    "Lab2-1/实验要求.md",
-    "LAB2_COMPLETE_REPORT.md",
-    "README.md",
-    "README_Lab2.md"
+    "Lab2-1/实验要求.md"
   ]
 }
