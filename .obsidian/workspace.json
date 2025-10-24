@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Lab2-1/实验报告.md",
+                "file": "Lab2-1/bidirectional/README.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "实验报告"
+              "title": "README"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Lab2-1/实验报告.md",
+                "file": "Lab2-1/bidirectional/README.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for 实验报告"
+              "title": "Backlinks for README"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Lab2-1/实验报告.md",
+                "file": "Lab2-1/bidirectional/README.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from 实验报告"
+              "title": "Outgoing links from README"
             }
           },
           {
@@ -142,13 +142,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Lab2-1/实验报告.md",
+                "file": "Lab2-1/bidirectional/README.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of 实验报告"
+              "title": "Outline of README"
             }
           }
         ]
@@ -171,10 +171,15 @@
   },
   "active": "3569ac67af71c4ff",
   "lastOpenFiles": [
+    "Lab2-1/SR协议.docx",
+    "Lab2-1/~$文件传输.docx",
+    "Lab2-1/~$双向停等协议.docx",
+    "Lab2-1/文件传输.docx",
+    "Lab2-1/双向停等协议.docx",
+    "Lab2-1/实验报告.md",
     "Lab2-1/README.md",
     "Lab2-1/FLOWCHARTS.md",
     "Lab2-1/实验要求.md",
-    "Lab2-1/实验报告.md",
     "LAB2_COMPLETE_REPORT.md",
     "README.md",
     "README_Lab2.md"
