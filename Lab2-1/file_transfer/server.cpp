@@ -98,10 +98,22 @@ bool receiveFile(SOCKET sock, sockaddr_in& clientAddr, const char* savePath) {
                               (sockaddr*)&fromAddr, &fromLen);
 
         if (recvLen > 0 && frame.flag != 2) {
+            // 如果收到重复的文件信息帧(flag==4)，重发ACK确认但不写入数据、不改变期望序列号
+            if (frame.flag == 4) {
+                // 若之前未记录文件大小，可更新一下显示用途
+                if (totalSize == 0 && frame.fileSize > 0) {
+                    totalSize = frame.fileSize;
+                    cout << "[信息] 文件大小: " << totalSize << " 字节" << endl;
+                }
+                cout << "[提示] 收到重复的文件信息帧，重发ACK确认" << endl;
+                sendAck(sock, clientAddr, 0);
+                continue;
+            }
+
             packetCount++;
 
-            // 第一帧包含文件大小信息
-            if (packetCount == 1) {
+            // 第一帧数据可能携带文件大小信息
+            if (totalSize == 0 && frame.fileSize > 0) {
                 totalSize = frame.fileSize;
                 cout << "[信息] 文件大小: " << totalSize << " 字节" << endl;
             }
@@ -116,7 +128,7 @@ bool receiveFile(SOCKET sock, sockaddr_in& clientAddr, const char* savePath) {
                 if (sendAck(sock, clientAddr, expectedSeq)) {
                     cout << "[ACK] 发送ACK=" << (int)expectedSeq << endl;
 
-                    // 写入数据
+                    // 写入数据（此处为顺序写，若需要也可根据offset定位）
                     outFile.write(frame.data, frame.dataLen);
                     receivedSize += frame.dataLen;
 

@@ -48,6 +48,12 @@ bool sendFile(SOCKET sock, sockaddr_in& serverAddr, const char* filePath) {
     cout << "大小: " << fileSize << " 字节" << endl;
     cout << "========================================" << endl;
 
+    // 为后续select/recvfrom准备复用的变量
+    fd_set readSet;
+    timeval timeout;
+    sockaddr_in fromAddr;
+    int fromLen = 0;
+
     // 发送文件信息帧
     DataFrame infoFrame;
     infoFrame.seq = 0;
@@ -56,31 +62,48 @@ bool sendFile(SOCKET sock, sockaddr_in& serverAddr, const char* filePath) {
     infoFrame.dataLen = fileName.length();
     strcpy_s(infoFrame.data, fileName.c_str());
 
-    sendto(sock, (char*)&infoFrame, sizeof(DataFrame), 0,
-           (sockaddr*)&serverAddr, sizeof(serverAddr));
+    // 发送文件信息帧并等待ACK，带重传机制
+    int attempts = 0;
+    const int MAX_ATTEMPTS = 5;
+    bool ackReceived = false;
+    cout << "[发送] 文件信息帧..." << endl;
 
-    cout << "[发送] 文件信息帧" << endl;
+    while (attempts < MAX_ATTEMPTS && !ackReceived) {
+        // 发送
+        sendto(sock, (char*)&infoFrame, sizeof(DataFrame), 0,
+               (sockaddr*)&serverAddr, sizeof(serverAddr));
+        cout << "[尝试] 第 " << (attempts + 1) << " 次发送文件信息帧" << endl;
 
-    // 等待服务器ACK确认
-    fd_set readSet;
-    FD_ZERO(&readSet);
-    FD_SET(sock, &readSet);
+        // 等待服务器ACK确认
+        fd_set readSet;
+        FD_ZERO(&readSet);
+        FD_SET(sock, &readSet);
 
-    timeval timeout;
-    timeout.tv_sec = 5;
-    timeout.tv_usec = 0;
+        timeval timeout;
+        timeout.tv_sec = 2; // 将超时缩短为2秒，以便更快重传
+        timeout.tv_usec = 0;
 
-    if (select(0, &readSet, NULL, NULL, &timeout) <= 0) {
-        cout << "[错误] 服务器无响应" << endl;
+        if (select(0, &readSet, NULL, NULL, &timeout) > 0) {
+            DataFrame ackFrame;
+            fromLen = sizeof(fromAddr);
+            recvfrom(sock, (char*)&ackFrame, sizeof(DataFrame), 0,
+                     (sockaddr*)&fromAddr, &fromLen);
+            
+            // 假设服务器用一个特定的ACK进行文件传输的初始确认
+            if (ackFrame.flag == 2 && ackFrame.seq == 0) {
+                 ackReceived = true;
+            }
+        } else {
+            cout << "[超时] 未收到文件信息帧的ACK，准备重传..." << endl;
+        }
+        attempts++;
+    }
+
+    if (!ackReceived) {
+        cout << "[错误] 服务器无响应，文件信息发送失败" << endl;
         inFile.close();
         return false;
     }
-
-    DataFrame ackFrame;
-    sockaddr_in fromAddr;
-    int fromLen = sizeof(fromAddr);
-    recvfrom(sock, (char*)&ackFrame, sizeof(DataFrame), 0,
-             (sockaddr*)&fromAddr, &fromLen);
 
     cout << "[确认] 服务器准备接收" << endl;
 
@@ -134,6 +157,7 @@ bool sendFile(SOCKET sock, sockaddr_in& serverAddr, const char* filePath) {
 
             if (selectResult > 0) {
                 DataFrame ack;
+                fromLen = sizeof(fromAddr);
                 recvfrom(sock, (char*)&ack, sizeof(DataFrame), 0,
                         (sockaddr*)&fromAddr, &fromLen);
 
