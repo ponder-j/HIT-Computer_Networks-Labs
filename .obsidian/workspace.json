@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Lab4/ip-forwarding-lab.md",
+                "file": "Lab4/network_topology.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ip-forwarding-lab"
+              "title": "network_topology"
             }
           }
         ]
@@ -78,7 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 226.5
+    "width": 200
   },
   "right": {
     "id": "c3065370a88cd120",
@@ -171,6 +171,8 @@
   },
   "active": "3569ac67af71c4ff",
   "lastOpenFiles": [
+    "Lab4/Lab4-1/mermaid-diagram.png",
+    "README.md",
     "Lab2-2/SR_protocol/README.md",
     "Lab2-1/imgs/basicGBN.png",
     "Lab2-2/SR_protocol/~$SR协议.docx",
@@ -192,7 +194,6 @@
     "Lab2-1/imgs",
     "Lab2-2/file_transfer/README.md",
     "LAB2_COMPLETE_REPORT.md",
-    "README.md",
     "README_Lab2.md",
     "Lab2-1/bidirectional/README.md",
     "Lab2-1/实验报告.md",
