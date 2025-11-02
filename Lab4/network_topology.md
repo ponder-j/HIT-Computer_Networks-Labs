@@ -20,9 +20,9 @@ graph LR
 
 ```mermaid
 sequenceDiagram
-    participant A as 未命名1<br/>(发送端)
-    participant B as 未命名2<br/>(转发端)
-    participant C as 未命名3<br/>(接收端)
+    participant A as Camellya<br/>(发送端)
+    participant B as Shorekeeper<br/>(转发端)
+    participant C as Jinhsi<br/>(接收端)
 
     Note over C: 1. 启动接收程序<br/>监听端口54321
     Note over B: 2. 启动转发程序<br/>监听端口12345
@@ -43,17 +43,17 @@ graph TB
     end
 
     subgraph 虚拟机1
-        A1[未命名1]
+        A1[Camellya]
         A2[send_ip.c]
     end
 
     subgraph 虚拟机2
-        B1[未命名2]
+        B1[Shorekeeper]
         B2[forward_ip.c]
     end
 
     subgraph 虚拟机3
-        C1[未命名3]
+        C1[Jinhsi]
         C2[recv_ip.c]
     end
 
@@ -76,15 +76,15 @@ graph TB
 
 ```mermaid
 graph LR
-    subgraph 未命名1_发送端
+    subgraph Camellya_发送端
         P1[程序: send_ip<br/>发送到端口: 12345]
     end
 
-    subgraph 未命名2_转发端
+    subgraph Shorekeeper_转发端
         P2[监听端口: 12345<br/>程序: forward_ip<br/>发送到端口: 54321]
     end
 
-    subgraph 未命名3_接收端
+    subgraph Jinhsi_接收端
         P3[监听端口: 54321<br/>程序: recv_ip]
     end
 
@@ -122,9 +122,9 @@ flowchart TD
     Modify --> Copy[将代码复制到<br/>对应虚拟机]
     Copy --> Compile[在各主机上编译程序]
     Compile --> Firewall[配置防火墙规则]
-    Firewall --> Run1[第1步: 启动未命名3<br/>接收端程序]
-    Run1 --> Run2[第2步: 启动未命名2<br/>转发端程序]
-    Run2 --> Run3[第3步: 运行未命名1<br/>发送端程序]
+    Firewall --> Run1[第1步: 启动Jinhsi<br/>接收端程序]
+    Run1 --> Run2[第2步: 启动Shorekeeper<br/>转发端程序]
+    Run2 --> Run3[第3步: 运行Camellya<br/>发送端程序]
     Run3 --> Result{数据接收<br/>成功?}
     Result -->|是| Success([实验成功])
     Result -->|否| Debug[检查:<br/>1. IP地址<br/>2. 防火墙<br/>3. 网络连通]

@@ -53,7 +53,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "未命名1",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -74,7 +74,8 @@
               "title": "Bookmarks"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -169,7 +170,7 @@
       "bases:Create new base": false
     }
   },
-  "active": "3569ac67af71c4ff",
+  "active": "53265acc2bc2b139",
   "lastOpenFiles": [
     "Lab4/Lab4-1/mermaid-diagram.png",
     "README.md",
