@@ -144,12 +144,6 @@ flowchart TD
 
 ```mermaid
 graph TB
-    subgraph 管理网络["SSH管理网络 (192.168.10.0/24)"]
-        M1[Camellya<br/>192.168.10.100<br/>ens33]
-        M2[Shorekeeper<br/>192.168.10.101<br/>ens33]
-        M3[Jinhsi<br/>192.168.10.102<br/>ens33]
-    end
-
     subgraph 实验网络A["实验网段A (192.168.1.0/24)"]
         A1[Camellya<br/>源主机<br/>192.168.1.2<br/>ens34]
         A2[Shorekeeper<br/>路由器eth0<br/>192.168.1.1<br/>ens34]
@@ -168,9 +162,6 @@ graph TB
     style A2 fill:#fff3e0,stroke:#e65100,stroke-width:2px
     style B1 fill:#fff3e0,stroke:#e65100,stroke-width:2px
     style B2 fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    style 管理网络 fill:#e8f5e9,stroke:#2e7d32,stroke-width:1px,stroke-dasharray: 5 5
-    style 实验网络A fill:#fff8e1,stroke:#f57f17,stroke-width:2px
-    style 实验网络B fill:#fce4ec,stroke:#c2185b,stroke-width:2px
 ```
 
 ## 详细双网卡路由拓扑
