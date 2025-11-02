@@ -1,4 +1,67 @@
 # Lab4-2增强版 - 5台主机串行转发配置指南
+```mermaid
+  graph LR
+
+      subgraph 发送端
+
+      A[Camellya<br/>192.168.10.100<br/>MAC: 00:0c:29:c3:a7:63]
+
+      end
+
+  
+
+      subgraph 转发器1
+
+      B[Phrolova<br/>192.168.10.103<br/>MAC: 00:0c:29:86:81:ca]
+
+      end
+
+  
+
+      subgraph 转发器2
+
+      C[Shorekeeper<br/>192.168.10.101<br/>MAC: 00:50:56:22:13:0a]
+
+      end
+
+  
+
+      subgraph 转发器3
+
+      D[Carlotta<br/>192.168.10.104<br/>MAC: 00:50:56:3e:9d:96]
+
+      end
+
+  
+
+      subgraph 接收端
+
+      E[Jinhsi<br/>192.168.10.102<br/>MAC: 00:0c:29:69:e1:6b]
+
+      end
+
+  
+
+      A -->|第1跳<br/>TTL: 255→254| B
+
+      B -->|第2跳<br/>TTL: 254→253| C
+
+      C -->|第3跳<br/>TTL: 253→252| D
+
+      D -->|第4跳<br/>TTL: 252| E
+
+  
+
+      style A fill:#ffcccc
+
+      style E fill:#ccffcc
+
+      style B fill:#ffffcc
+
+      style C fill:#ffffcc
+
+      style D fill:#ffffcc
+```
 
 ## 网络拓扑
 
